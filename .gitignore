@@ -1,0 +1,23 @@
+.env
+.env.*
+!.env.example
+
+# Banco e dumps locais
+database/*.sql
+database/*.dump
+database/*.bak
+database/*.backup
+database/*.tmp
+
+# Artefatos locais e lixo do sistema
+*.log
+*.sqlite
+*.sqlite3
+.DS_Store
+Thumbs.db
+
+# Ferramentas e editores
+.vscode/
+.idea/
+*.swp
+*.swo

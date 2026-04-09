@@ -29,8 +29,7 @@ export async function fetchUnits() {
           return {
             name: unit,
             latitude: null,
-            longitude: null,
-            tipo: null
+            longitude: null
           };
         }
 
@@ -45,8 +44,7 @@ export async function fetchUnits() {
         return {
           name,
           latitude: Number.isFinite(latitude) ? latitude : null,
-          longitude: Number.isFinite(longitude) ? longitude : null,
-          tipo: unit?.tipo || null
+          longitude: Number.isFinite(longitude) ? longitude : null
         };
       })
       .filter(Boolean);
