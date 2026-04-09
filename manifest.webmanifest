@@ -1,0 +1,17 @@
+{
+  "name": "ESF Mapper",
+  "short_name": "ESF Mapper",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f7faf8",
+  "theme_color": "#2e7d32",
+  "lang": "pt-BR",
+  "icons": [
+    {
+      "src": "assets/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

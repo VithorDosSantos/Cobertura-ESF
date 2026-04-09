@@ -1,0 +1,80 @@
+# ESF Mapper
+
+Sistema web para delimitação de cobertura ESF de Belém (PA), desenvolvido para uso de agentes e gestores de saúde.
+
+## Funcionalidades entregues
+
+- Login com validação obrigatória: nome, matrícula e unidade ESF (autocomplete)
+- Sessão salva em `sessionStorage`
+- Detecção de área salva por unidade com opção de carregar ou iniciar nova delimitação
+- Mapa Leaflet + OpenStreetMap centralizado em Belém (`-1.4558, -48.4902`)
+- Busca da unidade e endereços via Nominatim
+- Delimitação por pins numerados com fechamento ao clicar no primeiro pin
+- Edição por arraste, nota por pin e remoção de pin
+- Polyline e polígono semitransparente
+- Painel de instruções dinâmicas por estado
+- Métricas automáticas com Turf.js: área (km²), perímetro (km), total de pins
+- Alertas de área muito grande (> 20 km²) ou muito pequena (< 0.1 km²)
+- Modo campo: botão "Estou aqui" + indicador dentro/fora da área
+- Cadastro de equipamentos de saúde com categorias:
+  - UPA
+  - Farmácia
+  - Escola
+  - CAPS
+  - Hospital
+  - Outro
+- Exportação CSV:
+  - arquivo da área de cobertura
+  - arquivo separado de equipamentos
+- Exportação GeoJSON:
+  - polígono como Feature principal
+  - vértices e equipamentos como Features separadas
+- Persistência em `localStorage` com histórico de até 5 versões por unidade
+- Backup JSON completo do armazenamento local
+- Aviso ao sair da página com alterações não salvas
+- Responsivo para mobile, tablet e desktop
+- PWA básico com `manifest.webmanifest` e `service-worker.js`
+- QR Code da área (conteúdo resumido em JSON)
+
+## Estrutura de pastas
+
+```text
+esf-mapper/
+  index.html
+  manifest.webmanifest
+  service-worker.js
+  assets/
+    css/
+      styles.css
+    icons/
+      icon.svg
+    js/
+      app.js
+      modules/
+        constants.js
+        utils.js
+        storageService.js
+        mapService.js
+        exportService.js
+        uiService.js
+```
+
+## Como rodar localmente
+
+1. Entre na pasta do projeto.
+2. Inicie um servidor local simples (recomendado para PWA):
+
+```bash
+python -m http.server 8080
+```
+
+3. Abra no navegador:
+
+```text
+http://localhost:8080
+```
+
+## Observações
+
+- A geocodificação depende de conectividade com a API pública do Nominatim.
+- O funcionamento offline (PWA) cobre os arquivos locais da aplicação, mas não os tiles online do mapa.
