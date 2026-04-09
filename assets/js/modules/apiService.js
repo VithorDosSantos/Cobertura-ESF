@@ -23,7 +23,33 @@ export async function fetchUnits() {
       return null;
     }
 
-    return data.units;
+    return data.units
+      .map((unit) => {
+        if (typeof unit === "string") {
+          return {
+            name: unit,
+            latitude: null,
+            longitude: null,
+            tipo: null
+          };
+        }
+
+        const name = String(unit?.name || "").trim();
+        if (!name) {
+          return null;
+        }
+
+        const latitude = Number(unit?.latitude);
+        const longitude = Number(unit?.longitude);
+
+        return {
+          name,
+          latitude: Number.isFinite(latitude) ? latitude : null,
+          longitude: Number.isFinite(longitude) ? longitude : null,
+          tipo: unit?.tipo || null
+        };
+      })
+      .filter(Boolean);
   } catch {
     return null;
   }

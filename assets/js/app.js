@@ -12,11 +12,10 @@ import { downloadBlob, formatDateForFile } from "./modules/utils.js";
 
 const state = {
   profile: null,
+  unitsCatalog: [],
   boundaryPoints: [],
-  equipmentPoints: [],
   isPolygonClosed: false,
   isSaved: false,
-  isEquipmentMode: false,
   hasUnsavedChanges: false,
   metrics: {
     areaKm2: 0,
@@ -36,9 +35,6 @@ function getMapService() {
       onBoundaryDrag: (index, lat, lng) => updateBoundaryPoint(index, lat, lng),
       onBoundaryNoteChange: (index, note) => updateBoundaryNote(index, note),
       onBoundaryRemove: (index) => removeBoundaryPoint(index),
-      onEquipmentDrag: (index, lat, lng) => updateEquipmentPoint(index, lat, lng),
-      onEquipmentNoteChange: (index, note) => updateEquipmentNote(index, note),
-      onEquipmentRemove: (index) => removeEquipmentPoint(index),
       onLocationUpdate: (lat, lng) => evaluateInsideStatus(lat, lng),
       onNotice: (message) => ui.notify(message)
     });
@@ -48,6 +44,37 @@ function getMapService() {
 }
 
 let pendingSavedVersion = null;
+
+function normalizeUnitName(unitName) {
+  return String(unitName || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/\b(usf|esf|ums)\b/g, "")
+    .replace(/[^a-z0-9\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function findUnitInCatalog(inputUnitName) {
+  if (!inputUnitName || !state.unitsCatalog.length) {
+    return null;
+  }
+
+  const directMatch = state.unitsCatalog.find((unit) => unit.name === inputUnitName);
+  if (directMatch) {
+    return directMatch;
+  }
+
+  const normalizedInput = normalizeUnitName(inputUnitName);
+  if (!normalizedInput) {
+    return null;
+  }
+
+  return (
+    state.unitsCatalog.find((unit) => normalizeUnitName(unit.name) === normalizedInput) || null
+  );
+}
 
 function refreshInstruction() {
   const pins = state.boundaryPoints.length;
@@ -117,7 +144,6 @@ function recalculateMetrics() {
 function renderAll() {
   const map = getMapService();
   map.renderBoundary(state.boundaryPoints, state.isPolygonClosed);
-  map.renderEquipment(state.equipmentPoints);
   ui.renderPinsList(state.boundaryPoints);
   recalculateMetrics();
   refreshInstruction();
@@ -127,7 +153,6 @@ function renderAll() {
   const qrPayload = JSON.stringify({
     unidade: state.profile?.unit,
     pins: state.boundaryPoints,
-    equipamentos: state.equipmentPoints,
     areaKm2: state.metrics.areaKm2,
     perimetroKm: state.metrics.perimeterKm
   });
@@ -141,18 +166,6 @@ function markUnsavedChange() {
 
 function handleMapClick(event) {
   const { lat, lng } = event.latlng;
-
-  if (state.isEquipmentMode) {
-    state.equipmentPoints.push({
-      lat,
-      lng,
-      category: ui.equipmentCategory.value,
-      note: ""
-    });
-    markUnsavedChange();
-    renderAll();
-    return;
-  }
 
   if (state.isPolygonClosed) {
     ui.notify("Remova um pin para reabrir a área antes de adicionar novos pontos.");
@@ -204,33 +217,6 @@ function removeBoundaryPoint(index) {
   renderAll();
 }
 
-function updateEquipmentPoint(index, lat, lng) {
-  const point = state.equipmentPoints[index];
-  if (!point) {
-    return;
-  }
-
-  point.lat = lat;
-  point.lng = lng;
-  markUnsavedChange();
-}
-
-function updateEquipmentNote(index, note) {
-  const point = state.equipmentPoints[index];
-  if (!point) {
-    return;
-  }
-
-  point.note = note;
-  markUnsavedChange();
-}
-
-function removeEquipmentPoint(index) {
-  state.equipmentPoints.splice(index, 1);
-  markUnsavedChange();
-  renderAll();
-}
-
 function evaluateInsideStatus(lat, lng) {
   if (!state.isPolygonClosed || state.boundaryPoints.length < 3) {
     ui.setInsideStatus("neutral", "Área não fechada");
@@ -262,7 +248,6 @@ async function saveCurrentArea() {
   const payload = {
     profile: state.profile,
     boundaryPoints: state.boundaryPoints,
-    equipmentPoints: state.equipmentPoints,
     isPolygonClosed: state.isPolygonClosed,
     metrics: state.metrics
   };
@@ -292,7 +277,6 @@ function clearAllData() {
   }
 
   state.boundaryPoints = [];
-  state.equipmentPoints = [];
   state.isPolygonClosed = false;
   state.isSaved = false;
   state.hasUnsavedChanges = false;
@@ -301,7 +285,6 @@ function clearAllData() {
 
 function loadVersion(version) {
   state.boundaryPoints = (version?.boundaryPoints || []).map((point) => ({ ...point }));
-  state.equipmentPoints = (version?.equipmentPoints || []).map((point) => ({ ...point }));
   state.isPolygonClosed = Boolean(version?.isPolygonClosed);
   state.metrics = version?.metrics || state.metrics;
   state.isSaved = true;
@@ -322,6 +305,12 @@ async function submitLogin(event) {
   }
 
   state.profile = ui.getLoginData();
+
+  const selectedUnit = findUnitInCatalog(state.profile.unit);
+  if (selectedUnit) {
+    state.profile.unit = selectedUnit.name;
+  }
+
   saveSessionUser(state.profile);
 
   pendingSavedVersion =
@@ -339,13 +328,22 @@ async function startMapFlow(loadSaved) {
   ui.showMapScreen(state.profile);
   const map = getMapService();
   map.refreshSize();
-  await map.centerByUnitName(state.profile.unit);
+
+  const selectedUnit = findUnitInCatalog(state.profile.unit);
+  const centeredByCoordinates = map.centerByCoordinates(
+    selectedUnit?.latitude,
+    selectedUnit?.longitude,
+    15
+  );
+
+  if (!centeredByCoordinates) {
+    await map.centerByUnitName(state.profile.unit);
+  }
 
   if (loadSaved && pendingSavedVersion) {
     loadVersion(pendingSavedVersion);
   } else {
     state.boundaryPoints = [];
-    state.equipmentPoints = [];
     state.isPolygonClosed = false;
     state.isSaved = false;
     state.hasUnsavedChanges = false;
@@ -403,11 +401,6 @@ function registerEvents() {
     }
   });
 
-  ui.toggleEquipmentModeBtn.addEventListener("click", () => {
-    state.isEquipmentMode = !state.isEquipmentMode;
-    ui.setEquipmentMode(state.isEquipmentMode);
-  });
-
   window.addEventListener("beforeunload", (event) => {
     if (!state.hasUnsavedChanges) {
       return;
@@ -430,6 +423,7 @@ async function bootstrapUnits() {
     return;
   }
 
+  state.unitsCatalog = units;
   ui.populateUnits(units);
 }
 
@@ -457,4 +451,3 @@ registerEvents();
 bootstrapUnits();
 setupPwa();
 ui.validateLoginForm();
-ui.setEquipmentMode(false);

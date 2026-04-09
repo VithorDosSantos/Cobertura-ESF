@@ -122,21 +122,6 @@ $appName = 'ESF Mapper';
             </section>
 
             <section class="panel">
-              <h2>Equipamentos</h2>
-              <label for="equipmentCategory">Categoria</label>
-              <select id="equipmentCategory">
-                <option>UPA</option>
-                <option>Farmácia</option>
-                <option>Escola</option>
-                <option>CAPS</option>
-                <option>Hospital</option>
-                <option selected>Outro</option>
-              </select>
-              <button id="toggleEquipmentModeBtn" type="button" class="secondary">Adicionar equipamento</button>
-              <p id="equipmentModeLabel">Modo: área de cobertura</p>
-            </section>
-
-            <section class="panel">
               <h2>Lista de Pins</h2>
               <ol id="pinsList"></ol>
             </section>

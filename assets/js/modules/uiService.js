@@ -35,10 +35,6 @@ export class UIService {
     this.addressSearch = document.getElementById("addressSearch");
     this.searchAddressBtn = document.getElementById("searchAddressBtn");
 
-    this.toggleEquipmentModeBtn = document.getElementById("toggleEquipmentModeBtn");
-    this.equipmentModeLabel = document.getElementById("equipmentModeLabel");
-    this.equipmentCategory = document.getElementById("equipmentCategory");
-
     this.pinsList = document.getElementById("pinsList");
     this.areaQrCanvas = document.getElementById("areaQrCanvas");
 
@@ -57,7 +53,10 @@ export class UIService {
   populateUnits(units = BELEN_ESF_UNITS) {
     const datalist = document.getElementById("esfUnitsList");
     datalist.innerHTML = units
-      .map((unit) => `<option value="${this.escapeHtml(unit)}"></option>`)
+      .map((unit) => {
+        const unitName = typeof unit === "string" ? unit : unit?.name || "";
+        return `<option value="${this.escapeHtml(unitName)}"></option>`;
+      })
       .join("");
   }
 
@@ -117,16 +116,6 @@ export class UIService {
   setInsideStatus(kind, text) {
     this.insideStatus.className = `status-indicator ${kind}`;
     this.insideStatus.textContent = text;
-  }
-
-  setEquipmentMode(isEquipmentMode) {
-    this.equipmentModeLabel.textContent = isEquipmentMode
-      ? "Modo: adicionando equipamentos"
-      : "Modo: área de cobertura";
-
-    this.toggleEquipmentModeBtn.textContent = isEquipmentMode
-      ? "Voltar para área"
-      : "Adicionar equipamento";
   }
 
   renderPinsList(boundaryPoints) {

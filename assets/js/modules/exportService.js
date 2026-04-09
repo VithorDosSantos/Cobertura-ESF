@@ -29,35 +29,6 @@ function buildAreaCsv(state, profile) {
   downloadBlob(csv, filename, "text/csv;charset=utf-8");
 }
 
-function buildEquipmentCsv(state, profile) {
-  const headers = [
-    "unidade",
-    "categoria",
-    "latitude",
-    "longitude",
-    "nota",
-    "profissional",
-    "matricula",
-    "data_exportacao"
-  ];
-
-  const exportTime = formatDateTime();
-  const rows = state.equipmentPoints.map((point) => [
-    profile.unit,
-    point.category,
-    point.lat,
-    point.lng,
-    point.note || "",
-    profile.fullName,
-    profile.registration,
-    exportTime
-  ]);
-
-  const csv = [headers.join(","), ...rows.map((r) => r.map(sanitizeCsvValue).join(","))].join("\n");
-  const filename = `equipamentos_${slugify(profile.unit)}_${formatDateForFile()}.csv`;
-  downloadBlob(csv, filename, "text/csv;charset=utf-8");
-}
-
 function buildGeoJson(state, profile) {
   const polygonFeature = {
     type: "Feature",
@@ -90,22 +61,9 @@ function buildGeoJson(state, profile) {
     }
   }));
 
-  const equipmentFeatures = state.equipmentPoints.map((point) => ({
-    type: "Feature",
-    geometry: {
-      type: "Point",
-      coordinates: [point.lng, point.lat]
-    },
-    properties: {
-      tipo: "equipamento",
-      categoria: point.category,
-      nota: point.note || ""
-    }
-  }));
-
   const featureCollection = {
     type: "FeatureCollection",
-    features: [polygonFeature, ...boundaryPointFeatures, ...equipmentFeatures]
+    features: [polygonFeature, ...boundaryPointFeatures]
   };
 
   const filename = `area_cobertura_${slugify(profile.unit)}_${formatDateForFile()}.geojson`;
@@ -114,7 +72,6 @@ function buildGeoJson(state, profile) {
 
 export function exportAllAsCsv(state, profile) {
   buildAreaCsv(state, profile);
-  buildEquipmentCsv(state, profile);
 }
 
 export function exportAsGeoJson(state, profile) {

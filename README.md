@@ -89,6 +89,30 @@ http://localhost:8080
   - `POST /api/areas.php` salva área de cobertura
 - Enquanto o banco não estiver configurado, o sistema continua funcionando com persistência local (`localStorage`).
 
+### Regra de unidades do login
+
+- O login agora busca somente as unidades habilitadas em `esf_mapper_unidades`.
+- Isso evita mostrar todas as unidades da base e mantém apenas as unidades específicas da sua operação.
+- Se não houver banco configurado, o endpoint usa um fallback mínimo para não quebrar o fluxo.
+- Não existe tabela de tipos de unidade no app; o escopo é somente ESF/USF habilitadas na whitelist.
+
+## Estrutura SQL de unidades
+
+- Script base criado em `database/schema_unidades_saude.sql`.
+- Esse script foi derivado do seu dump de referência e inclui:
+  - estrutura da tabela `unidades_saude`
+  - tabela `esf_mapper_unidades` (whitelist para o login)
+  - índices e chaves estrangeiras
+  - carga inicial de unidades com coordenadas para o mapa
+  - views `vw_unidades_mapa` e `vw_esf_mapper_unidades_ativas`
+  - sem tabela de tipos de unidade, porque o sistema trabalha apenas com ESF/USF do escopo definido
+
+Importação exemplo:
+
+```bash
+mysql -u seu_usuario -p seu_banco < database/schema_unidades_saude.sql
+```
+
 ## Observações
 
 - A geocodificação depende de conectividade com a API pública do Nominatim.

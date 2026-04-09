@@ -5,22 +5,14 @@ declare(strict_types=1);
 require_once __DIR__ . '/bootstrap.php';
 
 $fallbackUnits = [
-    'ESF Jurunas I',
-    'ESF Jurunas II',
-    'ESF Guamá',
-    'ESF Marco',
-    'ESF Telégrafo',
-    'ESF Sacramenta',
-    'ESF Pedreira',
-    'ESF Terra Firme',
-    'ESF Bengui',
-    'ESF Tapanã',
-    'ESF Icoaraci',
-    'ESF Outeiro',
-    'ESF Mosqueiro',
-    'ESF Cabanagem',
-    'ESF Pratinha',
-    'ESF Condor'
+    ['name' => 'USF TAPANÃ I', 'latitude' => -1.34843300, 'longitude' => -48.46217700, 'tipo' => 3],
+    ['name' => 'USF BENGUI', 'latitude' => -1.37406100, 'longitude' => -48.45177800, 'tipo' => 3],
+    ['name' => 'USF TELÉGRAFO', 'latitude' => -1.42142600, 'longitude' => -48.48539400, 'tipo' => 3],
+    ['name' => 'USF CONDOR', 'latitude' => -1.47148600, 'longitude' => -48.47964900, 'tipo' => 3],
+    ['name' => 'USF TERRA FIRME', 'latitude' => -1.29788500, 'longitude' => -48.44292100, 'tipo' => 3],
+    ['name' => 'USF OUTEIRO', 'latitude' => -1.26444100, 'longitude' => -48.46270000, 'tipo' => 3],
+    ['name' => 'USF PARACURI', 'latitude' => -1.31276400, 'longitude' => -48.48333000, 'tipo' => 3],
+    ['name' => 'USF SACRAMENTA', 'latitude' => -1.41341800, 'longitude' => -48.46711300, 'tipo' => 3]
 ];
 
 if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
@@ -40,12 +32,27 @@ if ($pdo === null) {
 }
 
 try {
-    ensureUnitsTable($pdo);
-    $statement = $pdo->query('SELECT name FROM esf_units ORDER BY name ASC');
+    $statement = $pdo->query(
+        'SELECT
+            COALESCE(cfg.nome_exibicao, us.nome) AS name,
+            us.latitude,
+            us.longitude,
+            us.tipo_id AS tipo
+         FROM esf_mapper_unidades cfg
+         INNER JOIN unidades_saude us ON us.id = cfg.unidade_saude_id
+         WHERE cfg.ativo = 1
+           AND us.ativo = 1
+         ORDER BY cfg.ordem ASC, COALESCE(cfg.nome_exibicao, us.nome) ASC'
+    );
     $rows = $statement->fetchAll();
 
     $units = array_map(
-        static fn(array $row): string => (string) $row['name'],
+        static fn(array $row): array => [
+            'name' => (string) $row['name'],
+            'latitude' => $row['latitude'] !== null ? (float) $row['latitude'] : null,
+            'longitude' => $row['longitude'] !== null ? (float) $row['longitude'] : null,
+            'tipo' => $row['tipo'] !== null ? (int) $row['tipo'] : null
+        ],
         $rows
     );
 

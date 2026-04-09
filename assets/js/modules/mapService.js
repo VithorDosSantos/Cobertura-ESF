@@ -1,4 +1,4 @@
-import { BELEN_CENTER, DEFAULT_ZOOM, EQUIPMENT_CATEGORIES } from "./constants.js";
+import { BELEN_CENTER, DEFAULT_ZOOM } from "./constants.js";
 
 function makePinIcon(index, isFirst) {
   return L.divIcon({
@@ -9,22 +9,11 @@ function makePinIcon(index, isFirst) {
   });
 }
 
-function makeEquipmentIcon(category) {
-  const color = EQUIPMENT_CATEGORIES[category] || EQUIPMENT_CATEGORIES.Outro;
-  return L.divIcon({
-    className: "",
-    html: `<div class="equipment-marker" style="background:${color}"></div>`,
-    iconSize: [16, 16],
-    iconAnchor: [8, 8]
-  });
-}
-
 export class MapService {
   constructor(mapId, hooks) {
     this.hooks = hooks;
     this.map = L.map(mapId).setView(BELEN_CENTER, DEFAULT_ZOOM);
     this.boundaryMarkers = [];
-    this.equipmentMarkers = [];
     this.polyline = null;
     this.polygon = null;
     this.userLocationMarker = null;
@@ -63,6 +52,19 @@ export class MapService {
       this.hooks.onNotice("Não foi possível localizar a unidade. Mapa centralizado em Belém.");
       return false;
     }
+  }
+
+  centerByCoordinates(lat, lng, zoom = 15) {
+    const latitude = Number(lat);
+    const longitude = Number(lng);
+
+    if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+      return false;
+    }
+
+    this.map.setView([latitude, longitude], zoom);
+    this.refreshSize();
+    return true;
   }
 
   renderBoundary(boundaryPoints, isClosed) {
@@ -148,54 +150,6 @@ export class MapService {
         }
       ).addTo(this.map);
     }
-  }
-
-  renderEquipment(equipmentPoints) {
-    this.equipmentMarkers.forEach((marker) => marker.remove());
-    this.equipmentMarkers = [];
-
-    equipmentPoints.forEach((point, index) => {
-      const marker = L.marker([point.lat, point.lng], {
-        draggable: true,
-        icon: makeEquipmentIcon(point.category)
-      });
-
-      marker.on("dragend", (event) => {
-        const { lat, lng } = event.target.getLatLng();
-        this.hooks.onEquipmentDrag(index, lat, lng);
-      });
-
-      marker.on("popupopen", () => {
-        const noteField = document.getElementById(`eq-note-${index}`);
-        const removeButton = document.getElementById(`eq-remove-${index}`);
-
-        if (noteField) {
-          noteField.addEventListener("input", (event) => {
-            this.hooks.onEquipmentNoteChange(index, event.target.value);
-          });
-        }
-
-        if (removeButton) {
-          removeButton.addEventListener("click", () => {
-            this.hooks.onEquipmentRemove(index);
-            this.map.closePopup();
-          });
-        }
-      });
-
-      const popupHtml = `
-        <strong>${point.category}</strong><br/>
-        Lat: ${point.lat.toFixed(6)}<br/>
-        Lng: ${point.lng.toFixed(6)}
-        <label for="eq-note-${index}">Nota</label>
-        <textarea id="eq-note-${index}" class="popup-note">${point.note || ""}</textarea>
-        <button id="eq-remove-${index}" type="button" class="danger">Remover</button>
-      `;
-      marker.bindPopup(popupHtml);
-
-      marker.addTo(this.map);
-      this.equipmentMarkers.push(marker);
-    });
   }
 
   async searchAddress(addressText) {

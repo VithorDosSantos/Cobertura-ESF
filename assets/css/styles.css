@@ -453,14 +453,6 @@ dialog::backdrop {
     0 0 0 9px rgba(46, 125, 50, 0.14);
 }
 
-.equipment-marker {
-  width: 16px;
-  height: 16px;
-  border-radius: 4px;
-  border: 2px solid #fff;
-  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.2);
-}
-
 .popup-note {
   width: 100%;
   min-height: 56px;
@@ -522,10 +514,6 @@ dialog::backdrop {
   .topbar-actions button,
   #whereAmIBtn,
   #searchAddressBtn,
-  #toggleEquipmentModeBtn {
-    min-height: 46px;
-  }
-
   .sidebar {
     padding-bottom: 82px;
   }
