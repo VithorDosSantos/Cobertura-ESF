@@ -1,7 +1,7 @@
 {
   "name": "ESF Mapper",
   "short_name": "ESF Mapper",
-  "start_url": "./index.html",
+  "start_url": "./index.php",
   "display": "standalone",
   "background_color": "#f7faf8",
   "theme_color": "#2e7d32",

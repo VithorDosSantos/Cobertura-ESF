@@ -40,9 +40,14 @@ Sistema web para delimitação de cobertura ESF de Belém (PA), desenvolvido par
 
 ```text
 esf-mapper/
-  index.html
+  index.php
+  .env.example
   manifest.webmanifest
   service-worker.js
+  api/
+    bootstrap.php
+    units.php
+    areas.php
   assets/
     css/
       styles.css
@@ -62,17 +67,27 @@ esf-mapper/
 ## Como rodar localmente
 
 1. Entre na pasta do projeto.
-2. Inicie um servidor local simples (recomendado para PWA):
+2. Se quiser usar banco depois, copie `.env.example` para `.env` e preencha os dados do MySQL.
+3. Inicie um servidor PHP local:
 
 ```bash
-python -m http.server 8080
+php -S localhost:8080
 ```
 
-3. Abra no navegador:
+4. Abra no navegador:
 
 ```text
 http://localhost:8080
 ```
+
+## Camada PHP e banco
+
+- A aplicação agora usa `index.php` como entrada principal.
+- Existe uma API em PHP para futuras integrações de banco:
+  - `GET /api/units.php` lista unidades (usa fallback local se o banco não estiver configurado)
+  - `GET /api/areas.php?unit=...` busca última área salva da unidade
+  - `POST /api/areas.php` salva área de cobertura
+- Enquanto o banco não estiver configurado, o sistema continua funcionando com persistência local (`localStorage`).
 
 ## Observações
 

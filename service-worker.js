@@ -1,9 +1,10 @@
-const CACHE_NAME = "esf-mapper-v3";
+const CACHE_NAME = "esf-mapper-v4";
 const OFFLINE_ASSETS = [
   "./",
-  "./index.html",
+  "./index.php",
   "./assets/css/styles.css",
   "./assets/js/app.js",
+  "./assets/js/modules/apiService.js",
   "./assets/js/modules/constants.js",
   "./assets/js/modules/utils.js",
   "./assets/js/modules/storageService.js",
@@ -51,7 +52,11 @@ self.addEventListener("fetch", (event) => {
           caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
           return response;
         })
-        .catch(() => caches.match(event.request).then((cached) => cached || caches.match("./index.html")))
+        .catch(() =>
+          caches
+            .match(event.request)
+            .then((cached) => cached || caches.match("./index.php"))
+        )
     );
     return;
   }

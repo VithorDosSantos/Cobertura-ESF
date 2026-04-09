@@ -1,5 +1,6 @@
 import { exportAllAsCsv, exportAsGeoJson } from "./modules/exportService.js";
 import { MapService } from "./modules/mapService.js";
+import { fetchLatestAreaByUnit, fetchUnits, saveAreaRemote } from "./modules/apiService.js";
 import {
   getLatestUnitVersion,
   getStorageBackupJson,
@@ -252,7 +253,7 @@ function evaluateInsideStatus(lat, lng) {
   }
 }
 
-function saveCurrentArea() {
+async function saveCurrentArea() {
   if (!state.isPolygonClosed || state.boundaryPoints.length < 3) {
     ui.notify("Não é possível salvar sem polígono fechado.");
     return;
@@ -266,11 +267,22 @@ function saveCurrentArea() {
     metrics: state.metrics
   };
 
-  saveUnitVersion(state.profile.unit, payload);
+  const localVersion = saveUnitVersion(state.profile.unit, payload);
+  const wasSavedRemotely = await saveAreaRemote({
+    ...payload,
+    savedAt: localVersion.savedAt
+  });
+
   state.isSaved = true;
   state.hasUnsavedChanges = false;
   renderAll();
-  ui.notify("Área salva com sucesso.");
+
+  if (wasSavedRemotely) {
+    ui.notify("Área salva com sucesso no banco e no armazenamento local.");
+    return;
+  }
+
+  ui.notify("Área salva localmente. Configure o banco para persistir no servidor.");
 }
 
 function clearAllData() {
@@ -312,7 +324,8 @@ async function submitLogin(event) {
   state.profile = ui.getLoginData();
   saveSessionUser(state.profile);
 
-  pendingSavedVersion = getLatestUnitVersion(state.profile.unit);
+  pendingSavedVersion =
+    (await fetchLatestAreaByUnit(state.profile.unit)) || getLatestUnitVersion(state.profile.unit);
 
   if (pendingSavedVersion) {
     ui.openSavedDialog();
@@ -361,7 +374,9 @@ function registerEvents() {
   });
 
   ui.clearAllBtn.addEventListener("click", clearAllData);
-  ui.saveAreaBtn.addEventListener("click", saveCurrentArea);
+  ui.saveAreaBtn.addEventListener("click", async () => {
+    await saveCurrentArea();
+  });
   ui.exportCsvBtn.addEventListener("click", () => exportAllAsCsv(state, state.profile));
   ui.exportGeoJsonBtn.addEventListener("click", () => exportAsGeoJson(state, state.profile));
   ui.backupBtn.addEventListener("click", exportBackupJson);
@@ -409,6 +424,15 @@ function registerEvents() {
   });
 }
 
+async function bootstrapUnits() {
+  const units = await fetchUnits();
+  if (!units || units.length === 0) {
+    return;
+  }
+
+  ui.populateUnits(units);
+}
+
 function setupPwa() {
   if (!("serviceWorker" in navigator)) {
     return;
@@ -430,6 +454,7 @@ function setupPwa() {
 }
 
 registerEvents();
+bootstrapUnits();
 setupPwa();
 ui.validateLoginForm();
 ui.setEquipmentMode(false);

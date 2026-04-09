@@ -42,12 +42,23 @@ export class UIService {
     this.pinsList = document.getElementById("pinsList");
     this.areaQrCanvas = document.getElementById("areaQrCanvas");
 
-    this.populateUnits();
+    this.populateUnits(BELEN_ESF_UNITS);
   }
 
-  populateUnits() {
+  escapeHtml(value) {
+    return String(value)
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#39;");
+  }
+
+  populateUnits(units = BELEN_ESF_UNITS) {
     const datalist = document.getElementById("esfUnitsList");
-    datalist.innerHTML = BELEN_ESF_UNITS.map((unit) => `<option value="${unit}"></option>`).join("");
+    datalist.innerHTML = units
+      .map((unit) => `<option value="${this.escapeHtml(unit)}"></option>`)
+      .join("");
   }
 
   getLoginData() {
